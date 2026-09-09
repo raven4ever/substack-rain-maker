@@ -1,0 +1,38 @@
+# Platform-owned cluster template.
+name: prod-m10
+description: Dedicated production cluster.
+
+# Flat by construction: shallow merge is then total. The module assembles
+# replication_specs and auto-scaling blocks from these keys.
+spec:
+  cluster_type: REPLICASET
+  cloud_provider: AWS
+  # Multi-region by default, because class prod requires it. Still flat enough
+  # for a shallow merge: an override replaces this key wholesale.
+  regions:
+    - name: EU_WEST_1
+      node_count: 2
+      priority: 7
+    - name: US_EAST_1
+      node_count: 1
+      priority: 6
+  instance_size: M10
+  disk_size_gb: 10
+  mongodb_major_version: "8.0"
+  backup_enabled: true
+  termination_protection: true
+
+# Keys a development team may change. Everything else is sealed.
+overridable:
+  - regions
+  - instance_size
+  - disk_size_gb
+
+# Overridable upward, sealed downward. Compared against tier_order.
+min:
+  instance_size: M10
+
+# Must hold exactly, whatever the class floors say.
+required:
+  backup_enabled: true
+  termination_protection: true

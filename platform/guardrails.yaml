@@ -1,0 +1,62 @@
+# Platform-owned. The guardrail catalogue: every limit a development team is held to.
+#
+# The quotas below are demo-scale, chosen to protect the free-tier Terraform Cloud
+# budget of 500 managed resources and 1 concurrent run. They are not enterprise
+# limits. Do not copy them into a real platform without picking your own numbers.
+
+tier_order: [M0, M2, M5, M10, M20, M30, M40, M50, M60]
+
+# An environment declares `class:`. Omit it and the strictest class applies.
+default_class: prod
+
+# Static enums. Enforced in the JSON Schema, so a typo fails before Terraform runs.
+cloud_providers: [AWS]
+regions: [EU_WEST_1, US_EAST_1, EU_NORTH_1]
+database_roles: [read, readWrite]
+
+# Roles a development team may grant itself. ORG_OWNER is reserved because it
+# would let a team edit the org settings and API keys Rain Maker depends on.
+# GROUP_OWNER is allowed because a team owning its own projects is the premise.
+org_roles: [ORG_MEMBER, ORG_READ_ONLY, ORG_GROUP_CREATOR]
+project_roles:
+  - GROUP_OWNER
+  - GROUP_READ_ONLY
+  - GROUP_DATA_ACCESS_READ_ONLY
+  - GROUP_DATA_ACCESS_READ_WRITE
+cluster_name_pattern: "^[a-z][a-z0-9-]{2,20}$"
+cost_center_pattern: "^cc-[0-9]{4}$"
+
+quotas:
+  clusters_per_environment: 3
+  environments_per_org: 4
+  regions_per_cluster: 3
+
+# Tiers at or above this may use multi-region, online archive and the Atlas SQL
+# interface. Shared tiers cannot: they are single-region by construction and
+# federation has nothing to attach to.
+dedicated_features_min_tier: M10
+
+classes:
+  dev:
+    min: {}
+    max:
+      instance_size: M10   # the cost accident is an M10 left running in dev
+    required: {}
+    allow_open_ip: true    # 0.0.0.0/0 permitted, comment still mandatory
+    # Single region. A development cluster that spans regions bills twice for
+    # resilience nobody is relying on.
+    min_regions: 1
+    max_regions: 1
+  prod:
+    min:
+      instance_size: M10
+    max:
+      instance_size: M30   # above this, open a pull request against this file
+    required:
+      backup_enabled: true
+      termination_protection: true
+    allow_open_ip: false
+    # Multi-region is mandatory in production: a single-region cluster loses its
+    # primary with the region. The ceiling is the quota above.
+    min_regions: 2
+    max_regions: 3

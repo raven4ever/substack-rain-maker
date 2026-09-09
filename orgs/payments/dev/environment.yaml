@@ -1,0 +1,46 @@
+# Template path, free tier.
+environment: dev
+
+# Selects the floor set in platform/guardrails.yaml. Omit it and the
+# strictest class applies.
+class: dev
+
+project:
+  # name is not declared: the module computes <org>-<env>. A field whose
+  # value is always derivable is a field that can be wrong.
+  tags:
+    cost_center: "cc-4471"
+    owner: payments
+
+clusters:
+  main:
+    template: sandbox-m0
+    overrides:
+      region: EU_WEST_1
+
+# A list, because one cluster is normally reached by several workloads, each
+# with its own IAM role and its own reach. The ARN is the identity, so it is the
+# key — there is no separate name to keep in step with it.
+database_users:
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/payments-dev-app"
+    roles:
+      - database: payments
+        role: readWrite
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/payments-dev-migrations"
+    roles:
+      - database: payments
+        role: readWrite
+      - database: payments_audit
+        role: readWrite
+# Every cluster also gets an implicit atlasAdmin superuser. It is not declared
+# here: the module creates it and exposes the password as a sensitive output.
+
+network_access:
+  - cidr: "10.20.0.0/16"
+    comment: "corp vpc, dev"
+
+team_access:
+  - team: payments-owners
+    project_roles: [GROUP_OWNER]
+  - team: payments-readers
+    project_roles: [GROUP_READ_ONLY]

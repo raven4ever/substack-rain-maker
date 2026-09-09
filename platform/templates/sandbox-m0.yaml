@@ -1,0 +1,17 @@
+# Platform-owned cluster template.
+name: sandbox-m0
+description: Free-tier cluster for development environments. No backup, no SLA.
+
+spec:
+  cluster_type: REPLICASET
+  cloud_provider: AWS
+  region: EU_WEST_1
+  instance_size: M0
+  mongodb_major_version: "8.0"
+  backup_enabled: false
+  termination_protection: false
+  node_count: 3
+
+# Keys a development team may override. Everything else is sealed.
+overridable:
+  - region

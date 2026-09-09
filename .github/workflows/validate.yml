@@ -1,0 +1,73 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml jsonschema
+
+      # Shape from platform/schema/, values from platform/guardrails.yaml.
+      # The failure is readable in the pull request checks without opening a log.
+      - name: Guardrails
+        run: python scripts/validate.py
+
+      - name: Guardrail rules still fire
+        run: python scripts/validate.py --self-test
+
+      # One org per pull request. A shared change already fans out to every
+      # workspace, and the free tier runs one at a time.
+      - name: One organization per pull request
+        if: github.event_name == 'pull_request'
+        run: |
+          orgs=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- orgs/ \
+                 | cut -d/ -f2 | sort -u)
+          count=$(echo "$orgs" | grep -c . || true)
+          if [ "$count" -gt 1 ]; then
+            echo "::error::this pull request touches $count organizations:"
+            echo "$orgs" | sed 's/^/  - /'
+            echo "Split it. Each organization has its own workspace, its own state and its own reviewers."
+            exit 1
+          fi
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Format
+        run: terraform fmt -check -recursive
+      - name: Validate org-root
+        run: |
+          cd terraform/org-root
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: Validate bootstrap
+        run: |
+          cd terraform/bootstrap
+          terraform init -backend=false -input=false
+          terraform validate
+      # Not part of the control plane, but a broken example is worse than the
+      # twenty seconds this takes.
+      - name: Validate the example development account
+        run: |
+          cd example-dev-account
+          terraform init -backend=false -input=false
+          terraform validate

@@ -1,0 +1,94 @@
+# Custom path, dedicated tier. This is the burn-day showpiece: the paid surface
+# (PrivateLink, online archive, Atlas SQL) lands here, in this team's own YAML
+# and never in a template. See docs/adr/0007 and the paid-surface ticket.
+environment: prod
+
+class: prod
+
+project:
+  tags:
+    cost_center: "cc-9902"
+    owner: analytics
+
+clusters:
+  warehouse:
+    cluster_type: REPLICASET
+    cloud_provider: AWS
+    instance_size: M10
+    disk_size_gb: 10
+    mongodb_major_version: "8.0"
+    backup_enabled: true
+    termination_protection: true
+
+    # Multi-region. Replaces the flat `region:` field, which stays the shape for
+    # the single-region case. The highest priority is the one that takes writes;
+    # priorities must be unique and the electable node count must be odd.
+    regions:
+      - name: EU_WEST_1
+        node_count: 2
+        priority: 7
+      - name: EU_NORTH_1
+        node_count: 1
+        priority: 6
+
+    # The collection need not exist yet: Atlas parks the archive in PENDING and
+    # activates it when data arrives.
+    online_archive:
+      - database: analytics
+        collection: events
+        date_field: created_at
+        expire_after_days: 30
+
+# PrivateLink. A two-party handshake, and Rain Maker owns one party, so this is
+# two pull requests rather than one.
+#
+# Phase 1: declare the region and merge. Rain Maker creates the Atlas endpoint
+# service and publishes its name in the `private_link` workspace output. The
+# development team creates the interface endpoint in their own AWS account,
+# against that service name, in their own repository.
+#
+# Phase 2: add `aws_vpc_endpoint_id` here and merge again. Rain Maker accepts the
+# connection. Until then the endpoint sits pending — and AWS bills a pending
+# endpoint, so phase 2 is not optional.
+#
+# The endpoint is per project and region, not per cluster, which is why it is
+# declared here rather than under a cluster.
+private_link:
+  enabled: true
+  regions:
+    # Every region the cluster spans needs an endpoint. Atlas returns no private
+    # connection string at all when one is missing — not a partial one for the
+    # covered region, none.
+    - name: EU_WEST_1
+      # aws_vpc_endpoint_id: "vpce-..."   # phase 2
+    - name: EU_NORTH_1
+      # aws_vpc_endpoint_id: "vpce-..."   # phase 2
+
+# Atlas SQL. One federated database instance per environment, reading from a
+# cluster in the same project.
+sql_interface:
+  enabled: true
+  source_cluster: warehouse
+  databases:
+    - name: analytics
+      collections: [events]
+
+database_users:
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/analytics-prod-app"
+    roles:
+      - database: analytics
+        role: readWrite
+  # "*" means every database, which becomes readAnyDatabase on admin. A BI tool
+  # that has to see whatever exists, rather than a named list kept in step by hand.
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/analytics-prod-bi"
+    roles:
+      - database: "*"
+        role: read
+
+network_access:
+  - cidr: "10.31.0.0/16"
+    comment: "corp vpc, analytics prod"
+
+team_access:
+  - team: analytics-owners
+    project_roles: [GROUP_OWNER]

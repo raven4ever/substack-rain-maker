@@ -1,0 +1,33 @@
+# Custom path. No template. Still bound by every guardrail.
+environment: dev
+
+class: dev
+
+project:
+  tags:
+    cost_center: "cc-9902"
+    owner: analytics
+
+clusters:
+  warehouse:
+    cluster_type: REPLICASET
+    cloud_provider: AWS
+    region: EU_WEST_1
+    instance_size: M0
+    node_count: 3
+    backup_enabled: false
+    termination_protection: false
+
+database_users:
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/analytics-dev-app"
+    roles:
+      - database: analytics
+        role: readWrite
+
+network_access:
+  - cidr: "10.30.0.0/16"
+    comment: "corp vpc, analytics dev"
+
+team_access:
+  - team: analytics-owners
+    project_roles: [GROUP_OWNER]

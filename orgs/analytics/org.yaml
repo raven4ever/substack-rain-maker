@@ -1,0 +1,12 @@
+# Declared by the development team, reviewed by CODEOWNERS.
+organization:
+  name: analytics
+  # Created by hand in the Atlas UI (ADR 0002). The credential lives in a
+  # Terraform Cloud variable set, never here.
+  atlas_org_id: "6a9e6991c2ad997dc037cafd"
+
+teams:
+  - name: analytics-owners
+    org_roles: [ORG_GROUP_CREATOR]
+    members:
+      - carol@acme.example

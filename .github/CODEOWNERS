@@ -1,0 +1,15 @@
+# In a real enterprise these are GitHub team handles (@acme/platform-team,
+# @acme/payments-team). This demo repository lives under a personal account,
+# where teams do not exist, so every handle is the same user. The structure is
+# what matters: the platform team owns everything outside an org directory.
+
+# Platform team owns everything by default.
+*                       @raven4ever
+
+# Each development team owns its own organization subtree, and only that.
+/orgs/payments/         @raven4ever
+/orgs/analytics/        @raven4ever
+
+# Templates, guardrails and schema stay platform-owned even though development
+# teams reference them daily. This is the seal on the override allowlist.
+/platform/              @raven4ever

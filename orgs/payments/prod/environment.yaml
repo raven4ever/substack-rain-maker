@@ -1,0 +1,45 @@
+# Template path.
+environment: prod
+
+# NOTE: class 'dev', in a directory named 'prod'. Deliberate, and worth reading
+# twice.
+#
+# `class` is separate from the directory name so that a 'staging' environment can
+# carry `class: prod` and be held to production floors. This is that mechanism
+# used in the other direction: the demo funds exactly one dedicated cluster, and
+# analytics/prod is it, because the paid surface (PrivateLink, online archive,
+# Atlas SQL) needs a dedicated tier.
+#
+# It is also the honest illustration of the known weakness: `class` is
+# self-declared, and CODEOWNERS review is the only thing standing between a team
+# and a cheaper floor set. The guardrails are not weakened to allow this — the
+# prod floor is still M10 and still requires backups. The declaration moved, and
+# the move is one line in a diff a code owner has to approve.
+class: dev
+
+project:
+  tags:
+    cost_center: "cc-4471"
+    owner: payments
+
+clusters:
+  main:
+    template: sandbox-m0
+    overrides:
+      region: EU_WEST_1
+
+database_users:
+  - aws_iam_role_arn: "arn:aws:iam::111122223333:role/payments-prod-app"
+    roles:
+      - database: payments
+        role: readWrite
+
+network_access:
+  - cidr: "10.10.0.0/16"
+    comment: "corp vpc, prod"
+
+team_access:
+  - team: payments-owners
+    project_roles: [GROUP_OWNER]
+  - team: payments-readers
+    project_roles: [GROUP_READ_ONLY]

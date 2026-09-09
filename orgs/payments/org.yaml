@@ -1,0 +1,20 @@
+# Declared by the development team, reviewed by CODEOWNERS.
+organization:
+  name: payments
+  # Created by hand in the Atlas UI (ADR 0002). The credential lives in a
+  # Terraform Cloud variable set, never here.
+  atlas_org_id: "6a9e6ed0f7413e75e204d2c1"
+
+teams:
+  - name: payments-owners
+    org_roles: [ORG_GROUP_CREATOR]
+    members:
+      # Declared by email. `mongodbatlas_cloud_user_org_assignment` takes the
+      # email and emits the user id, so adding a person here invites them; no
+      # lookup and no hand-copied ids. Membership shows as PENDING until they
+      # accept.
+      - alice@acme.example
+  - name: payments-readers
+    org_roles: [ORG_READ_ONLY]
+    members:
+      - bob@acme.example
