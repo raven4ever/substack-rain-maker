@@ -2,7 +2,7 @@
 
 A GitOps control plane for MongoDB Atlas. Organizations, projects, clusters, database users, network access, teams and role bindings are declared in YAML here and applied by Terraform Cloud on every merge.
 
-Supporting repository for the Substack article _Rain Maker: A GitOps Control Plane for MongoDB Atlas_ (link added once published).
+Supporting repository for the Substack article _[Rain Maker: A GitOps Control Plane for MongoDB Atlas](https://driftdetected.substack.com/p/rain-maker-a-gitops-control-plane)_.
 
 Mantra: when it rains, the Mongo leaves grow.
 
